@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "my-mcp": {
+      "command": "python",
+      "args": ["-m", "openmnemo.mcp.server"],
+      "cwd": "C:/AI_Lab/my-mcp",
+      "env": {
+        "SQL_URL":        "sqlite:///./my_mcp.db",
+        "CHROMA_PATH":    "./.chroma",
+        "CHROMA_MODE":    "local",
+        "NEO4J_URI":      "",
+        "MONGO_URI":      "",
+        "TENANT_ID":      "default"
+      }
+    }
+  }
+}

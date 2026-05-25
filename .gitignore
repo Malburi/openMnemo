@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# 가상환경
+.venv/
+venv/
+env/
+
+# DB / 벡터 스토어 (로컬 데이터)
+*.db
+*.db-shm
+*.db-wal
+.chroma/
+.chroma_test_mcp/
+
+# 환경변수
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# 테스트 산출물
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# 배포 산출물
+*.zip
