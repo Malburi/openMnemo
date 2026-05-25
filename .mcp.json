@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "my-mcp": {
-      "command": "python",
+      "command": "C:\\AI_Lab\\AX-AILab2-2-main\\.venv\\Scripts\\python.exe",
       "args": ["-m", "openmnemo.mcp.server"],
       "cwd": "C:/AI_Lab/my-mcp",
       "env": {
