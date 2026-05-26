@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__my-mcp__ping",
+      "mcp__my-mcp__ontology_manifest",
+      "mcp__my-mcp__ontology_ingest",
+      "mcp__my-mcp__ontology_add_node",
+      "mcp__my-mcp__ontology_add_edge",
+      "mcp__my-mcp__ontology_query",
+      "mcp__my-mcp__ontology_extract",
+      "mcp__my-mcp__query_bm25",
+      "mcp__my-mcp__identity_add_alias",
+      "mcp__my-mcp__identity_resolve",
+      "mcp__my-mcp__identity_propose_duplicate",
+      "mcp__my-mcp__identity_resolve_duplicate",
+      "mcp__my-mcp__workflow_create",
+      "mcp__my-mcp__workflow_advance",
+      "mcp__my-mcp__workflow_list",
+      "mcp__my-mcp__impact_record",
+      "mcp__my-mcp__impact_history",
+      "mcp__my-mcp__harness_run"
+    ]
+  }
+}

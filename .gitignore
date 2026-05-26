@@ -27,6 +27,10 @@ env/
 .env.*
 !.env.example
 
+# 로컬 MCP 설정 (경로·비밀번호 포함)
+.mcp.json
+!.mcp.json.example
+
 # IDE
 .idea/
 .vscode/
