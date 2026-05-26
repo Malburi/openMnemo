@@ -276,25 +276,389 @@ uv sync
 
 ---
 
-## 12. 18개 MCP 도구 목록
+## 12. 18개 MCP 도구 상세 가이드
 
-| 카테고리 | 도구명 | 설명 |
+> 모든 도구는 Claude Code 채팅창에서 자연어로 호출합니다.
+
+---
+
+### 기본 도구
+
+---
+
+#### `ping` — 서버·스토어 상태 확인
+
+서버가 정상 동작 중인지, 각 스토어(Neo4j, ChromaDB, SQL)에 연결됐는지 확인합니다.
+
+**사용 예:**
+```
+ping 도구 호출해줘
+```
+
+**응답 예시:**
+```json
+{
+  "status": "ok",
+  "stores": { "neo4j": "ok", "chroma": "ok", "mongo": "not_configured", "sql": "ok" },
+  "identity": "ok",
+  "tool_count": 18,
+  "table_counts": { "ontology_nodes": 14, "ontology_edges": 11 }
+}
+```
+
+---
+
+#### `ontology_manifest` — 온톨로지 문법 전체 조회
+
+9개 공간 정의, 허용 관계, 영향 카테고리 전체를 JSON으로 반환합니다.
+
+**사용 예:**
+```
+ontology_manifest 도구로 문법 전체 보여줘
+```
+
+**CLI:**
+```powershell
+uv run my-mcp manifest
+```
+
+---
+
+#### `ontology_ingest` — 텍스트 벡터 저장
+
+텍스트를 임베딩 벡터로 변환해 ChromaDB에 저장합니다. `ontology_query`로 검색 가능해집니다.
+
+**사용 예:**
+```
+ontology_ingest 도구로 다음 텍스트들을 저장해줘:
+- "RAG는 검색 증강 생성 기법이다"
+- "ChromaDB는 벡터 데이터베이스다"
+```
+
+**파라미터:**
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| `texts` | ✅ | 저장할 텍스트 목록 |
+| `metadatas` | ❌ | 각 텍스트의 메타데이터 (space, node_id 등) |
+| `ids` | ❌ | 고유 ID (미지정 시 SHA256 자동 생성) |
+
+**CLI:**
+```powershell
+uv run my-mcp ingest "저장할 텍스트" --source 출처명
+```
+
+---
+
+#### `ontology_add_node` — 노드 추가·업데이트
+
+온톨로지 그래프에 노드를 추가합니다. 같은 `node_id`로 재호출하면 업데이트됩니다.
+
+**사용 예:**
+```
+ontology_add_node 도구로
+  space="concept", node_id="machine_learning", node_type="abstraction",
+  properties={"label": "머신러닝", "description": "데이터로부터 패턴을 학습하는 기술"}
+추가해줘
+```
+
+**파라미터:**
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| `space` | ✅ | 9개 공간 중 하나 |
+| `node_id` | ✅ | 고유 ID (snake_case 권장) |
+| `node_type` | ❌ | 공간별 허용 타입 (아래 표 참고) |
+| `properties` | ❌ | label, description 등 속성 |
+
+> **공간별 허용 node_type** → 9절 참고
+
+---
+
+#### `ontology_add_edge` — 노드 간 관계 추가
+
+두 노드 사이에 방향성 관계를 추가합니다.
+
+**사용 예:**
+```
+ontology_add_edge 도구로
+  from_space="subject", from_id="openai",
+  to_space="concept", to_id="embedding",
+  relation="specializes_in"
+추가해줘
+```
+
+**파라미터:**
+| 파라미터 | 필수 | 설명 |
+|----------|------|------|
+| `from_space` | ✅ | 출발 노드의 공간 |
+| `from_id` | ✅ | 출발 노드 ID |
+| `to_space` | ✅ | 도착 노드의 공간 |
+| `to_id` | ✅ | 도착 노드 ID |
+| `relation` | ✅ | 관계 레이블 (공간 조합별 허용 목록 있음) |
+| `properties` | ❌ | 관계 속성 |
+
+> **공간 간 허용 relation** → 9절 참고
+
+---
+
+#### `ontology_query` — 하이브리드 검색
+
+자연어 쿼리로 벡터 유사도 + 그래프 확장을 결합해 검색합니다.
+
+**사용 예:**
+```
+ontology_query 도구로 "경조금 지급 기준" 검색해줘
+ontology_query 도구로 "머신러닝" top_k=10으로 검색해줘
+```
+
+**파라미터:**
+| 파라미터 | 기본값 | 설명 |
 |----------|--------|------|
-| 기본 | `ping` | 서버·스토어 상태 확인 |
-| 기본 | `ontology_manifest` | 온톨로지 문법 조회 |
-| 기본 | `ontology_ingest` | 텍스트 벡터 저장 |
-| 기본 | `ontology_add_node` | 노드 추가·업데이트 |
-| 기본 | `ontology_add_edge` | 노드 간 관계 추가 |
-| 기본 | `ontology_query` | 하이브리드 검색 (벡터+그래프) |
-| 기본 | `query_bm25` | 키워드 전문 검색 |
-| 기본 | `ontology_extract` | 텍스트 → 노드·엣지 자동 추출 |
-| Identity | `identity_add_alias` | 노드 별칭 등록 |
-| Identity | `identity_resolve` | 별칭 → canonical_id 조회 |
-| Identity | `identity_propose_duplicate` | 중복 노드 쌍 제안 |
-| Identity | `identity_resolve_duplicate` | 중복 후보 승인·거부 |
-| Workflow | `workflow_create` | 워크플로우 생성 |
-| Workflow | `workflow_advance` | 상태 전진 |
-| Workflow | `workflow_list` | 실행 목록 조회 |
-| Impact | `impact_record` | 영향 분석 기록 |
-| Impact | `impact_history` | 영향 이력 조회 |
-| Harness | `harness_run` | PDF·URL 수집 파이프라인 |
+| `query` | — | 검색할 자연어 쿼리 |
+| `top_k` | 5 | 반환할 최대 결과 수 |
+| `source_filter` | — | 특정 소스만 검색 (파일명 등) |
+| `min_score` | 0.0 | 최소 점수 임계값 (0.0~1.0) |
+| `use_graph` | true | 그래프 확장 사용 여부 |
+
+**CLI:**
+```powershell
+uv run my-mcp query "검색어" --top-k 10
+uv run my-mcp query "검색어" --no-graph
+```
+
+---
+
+#### `query_bm25` — 키워드 전문 검색
+
+정확한 단어·고유명사 검색에 적합합니다. Neo4j 연결 필요.
+
+**사용 예:**
+```
+query_bm25 도구로 "복리후생" 키워드 검색해줘
+```
+
+**파라미터:**
+| 파라미터 | 기본값 | 설명 |
+|----------|--------|------|
+| `query` | — | 검색 키워드 |
+| `top_k` | 10 | 최대 결과 수 |
+| `source_filter` | — | 특정 소스 필터 |
+
+---
+
+#### `ontology_extract` — 텍스트 → 노드·엣지 자동 추출
+
+텍스트에서 개념·주체·자원을 자동으로 파악해 노드와 엣지로 저장합니다.
+
+**사용 예:**
+```
+ontology_extract 도구로 다음 텍스트에서 개념을 추출해줘:
+"RAG 시스템은 ChromaDB를 벡터 스토어로 사용하며, OpenAI 임베딩을 통해 문서를 저장한다."
+source="rag_description"으로 설정해줘
+```
+
+**파라미터:**
+| 파라미터 | 기본값 | 설명 |
+|----------|--------|------|
+| `text` | — | 추출할 텍스트 |
+| `source` | "unknown" | 출처 식별자 |
+| `auto_ingest` | true | 추출 후 벡터 스토어 자동 저장 |
+
+---
+
+### Identity 도구
+
+---
+
+#### `identity_add_alias` — 노드 별칭 등록
+
+하나의 노드에 여러 이름(별칭)을 등록합니다.
+
+**사용 예:**
+```
+identity_add_alias 도구로
+  canonical_id="rag", alias="검색증강생성", space="concept"
+등록해줘
+```
+
+---
+
+#### `identity_resolve` — 별칭으로 canonical_id 조회
+
+별칭을 입력하면 연결된 원본 노드 ID를 반환합니다.
+
+**사용 예:**
+```
+identity_resolve 도구로 "검색증강생성" 조회해줘
+```
+
+**CLI:**
+```powershell
+uv run my-mcp identity resolve "검색증강생성"
+```
+
+---
+
+#### `identity_propose_duplicate` — 중복 노드 쌍 제안
+
+두 노드가 같은 개념을 가리킬 가능성이 있을 때 검토 대상으로 등록합니다. 자동 병합은 하지 않습니다.
+
+**사용 예:**
+```
+identity_propose_duplicate 도구로
+  node_a="rag", node_b="retrieval_augmented_generation",
+  space="concept", reason="같은 개념의 다른 표기"
+제안해줘
+```
+
+---
+
+#### `identity_resolve_duplicate` — 중복 후보 승인·거부
+
+`identity_propose_duplicate`로 등록된 중복 후보를 승인하거나 거부합니다.
+
+**사용 예:**
+```
+identity_resolve_duplicate 도구로
+  candidate_id="<ID>", action="approve"
+처리해줘
+```
+
+**CLI:**
+```powershell
+uv run my-mcp identity duplicates          # 목록 조회
+```
+
+---
+
+### Workflow 도구
+
+---
+
+#### `workflow_create` — 워크플로우 생성
+
+장기 작업(수집, 검토, 배포 등)을 추적하는 실행 단위를 생성합니다.
+
+**사용 예:**
+```
+workflow_create 도구로
+  action_type="ingest", payload={"source": "규정집.pdf"}
+워크플로우 만들어줘
+```
+
+**상태 흐름:** `pending → running → completed / failed`
+
+---
+
+#### `workflow_advance` — 워크플로우 상태 전진
+
+워크플로우의 상태를 다음 단계로 변경합니다.
+
+**사용 예:**
+```
+workflow_advance 도구로
+  run_id="<ID>", new_status="running", note="처리 시작"
+실행해줘
+```
+
+---
+
+#### `workflow_list` — 실행 목록 조회
+
+워크플로우 실행 목록을 조회합니다.
+
+**사용 예:**
+```
+workflow_list 도구로 pending 상태 목록 보여줘
+workflow_list 도구로 전체 목록 20개 보여줘
+```
+
+**CLI:**
+```powershell
+uv run my-mcp workflow list --status pending
+uv run my-mcp workflow list --limit 50
+```
+
+---
+
+### Impact 도구
+
+---
+
+#### `impact_record` — 영향 분석 기록
+
+노드에 발생한 영향을 카테고리별로 기록합니다.
+
+**사용 예:**
+```
+impact_record 도구로
+  node_id="rag", space="concept", category="I6",
+  result={"description": "새로운 RAG 패턴 발견", "score": 0.9}
+기록해줘
+```
+
+**영향 카테고리:**
+| 카테고리 | 설명 |
+|----------|------|
+| `I1` | 데이터 변화 |
+| `I2` | 워크플로우 변화 |
+| `I3` | 주체 행동 변화 |
+| `I4` | 커뮤니티 효과 |
+| `I5` | 거버넌스 변화 |
+| `I6` | 지식 생성 |
+| `I7` | 감사·추적 |
+
+---
+
+#### `impact_history` — 영향 이력 조회
+
+특정 노드의 영향 분석 기록 전체를 조회합니다.
+
+**사용 예:**
+```
+impact_history 도구로 node_id="rag" 이력 조회해줘
+```
+
+---
+
+### Harness 도구
+
+---
+
+#### `harness_run` — PDF·URL 수집 파이프라인
+
+PDF 파일 또는 웹 URL을 자동으로 파싱·청킹·검증 후 온톨로지에 저장합니다.
+
+**사용 예:**
+```
+harness_run 도구로 sources=["C:/Users/사용자명/문서/규정집.pdf"] 처리해줘
+harness_run 도구로 sources=["https://example.com/article"] 처리해줘
+harness_run 도구로 sources=["C:/file1.pdf", "https://example.com"] 처리해줘
+```
+
+**파라미터:**
+| 파라미터 | 기본값 | 설명 |
+|----------|--------|------|
+| `sources` | — | PDF 경로 또는 URL 목록 |
+| `goal` | "ingest" | Mission 목표 |
+| `auto_ingest` | true | 검증 통과 청크 벡터 저장 여부 |
+
+**처리 흐름:**
+```
+소스 입력 → Worker(PDF파서/웹크롤러) → 청크 분할 → 검증 → ChromaDB + Neo4j 저장
+```
+
+**응답 예시:**
+```json
+{
+  "total_sources": 1,
+  "passed": 1,
+  "failed": 0,
+  "jobs": [{ "worker": "pdf_parser", "worker_score": 0.995 }]
+}
+```
+
+**CLI:**
+```powershell
+uv run my-mcp harness "C:/path/to/file.pdf" --output result.zip
+uv run my-mcp harness https://example.com
+```
